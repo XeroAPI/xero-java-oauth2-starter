@@ -76,18 +76,6 @@ public class Callback extends HttpServlet {
 
         TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectURI).execute();
 
-        HttpTransport httpTransport = new NetHttpTransport();
-        JsonFactory jsonFactory = new JacksonFactory();
-        GoogleCredential credential = new GoogleCredential.Builder().setTransport(httpTransport)
-                .setJsonFactory(jsonFactory).setClientSecrets(clientId, clientSecret).build();
-        credential.setAccessToken(tokenResponse.getAccessToken());
-        credential.setRefreshToken(tokenResponse.getRefreshToken());
-        credential.setExpiresInSeconds(tokenResponse.getExpiresInSeconds());
-
-        // Create requestFactory with credentials
-        HttpTransport transport = new NetHttpTransport();
-        HttpRequestFactory requestFactory = transport.createRequestFactory(credential);
-
         ApiClient defaultIdentityClient = new ApiClient("https://api.xero.com", null, null, null, null);
         IdentityApi idApi = new IdentityApi(defaultIdentityClient);
         List<Connection> connection = idApi.getConnections(tokenResponse.getAccessToken(),null);
