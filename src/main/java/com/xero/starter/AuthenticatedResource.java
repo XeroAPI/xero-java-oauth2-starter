@@ -2,6 +2,7 @@ package main.java.com.xero.starter;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -14,6 +15,11 @@ import org.threeten.bp.OffsetDateTime;
 import com.xero.api.*;
 import com.xero.api.client.AccountingApi;
 import com.xero.models.accounting.*;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.Claim;
 
 @WebServlet("/AuthenticatedResource")
 public class AuthenticatedResource extends HttpServlet {
@@ -30,6 +36,20 @@ public class AuthenticatedResource extends HttpServlet {
 		String savedAccessToken =store.get(request, "access_token");
 		String savedRefreshToken = store.get(request, "refresh_token");
 		String xeroTenantId = store.get(request, "xero_tenant_id");	
+		String id_token = store.get(request, "id_token");
+
+		// Let's decode our id_token and print out some values
+		try {
+			DecodedJWT jwt_decoded = JWT.decode(id_token);
+			Map<String, Claim> claims = jwt_decoded.getClaims();  
+			System.out.println(claims.get("email").asString());
+			System.out.println(claims.get("given_name").asString());
+			System.out.println(claims.get("family_name").asString());
+			System.out.println(claims.get("preferred_username").asString());
+			System.out.println(claims.get("xero_userid").asString());
+		} catch (JWTDecodeException e) {
+			System.out.println(e.toString());
+        }
 
 		// Check expiration of token and refresh if necessary
 		// This should be done prior to each API call to ensure your accessToken is valid

@@ -82,6 +82,7 @@ public class Callback extends HttpServlet {
        
         TokenStorage store = new TokenStorage();
         store.saveItem(response, "jwt_token", tokenResponse.toPrettyString());
+        store.saveItem(response, "id_token", tokenResponse.get("id_token").toString());
         store.saveItem(response, "access_token", tokenResponse.getAccessToken());
         store.saveItem(response, "refresh_token", tokenResponse.getRefreshToken());
         store.saveItem(response, "expires_in_seconds", tokenResponse.getExpiresInSeconds().toString());
