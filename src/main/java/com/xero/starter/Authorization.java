@@ -58,6 +58,10 @@ public class Authorization extends HttpServlet {
         scopeList.add("accounting.reports.read");
         scopeList.add("accounting.attachments");
         
+        // Save your secretState variable and compare in callback to prevent CSRF
+        TokenStorage store = new TokenStorage();
+        store.saveItem(response, "state", secretState);
+
         DataStoreFactory DATA_STORE_FACTORY = new MemoryDataStoreFactory();
         AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
                 HTTP_TRANSPORT, JSON_FACTORY, new GenericUrl(TOKEN_SERVER_URL),
