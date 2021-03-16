@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
+
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
@@ -33,6 +35,7 @@ public class Callback extends HttpServlet {
     final String AUTHORIZATION_SERVER_URL = "https://login.xero.com/identity/connect/authorize";
     final NetHttpTransport HTTP_TRANSPORT = new NetHttpTransport();
     final JsonFactory JSON_FACTORY = new JacksonFactory();
+    final ApiClient defaultClient = new ApiClient();
 
     /**
      * @see HttpServlet#HttpServlet()
@@ -80,19 +83,24 @@ public class Callback extends HttpServlet {
 
             TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectURI).execute();
 
-            ApiClient defaultIdentityClient = new ApiClient("https://api.xero.com", null, null, null, null);
-            IdentityApi idApi = new IdentityApi(defaultIdentityClient);
-            List<Connection> connection = idApi.getConnections(tokenResponse.getAccessToken(),null);
-        
-            //TokenStorage store = new TokenStorage();
-            store.saveItem(response, "jwt_token", tokenResponse.toPrettyString());
-            store.saveItem(response, "id_token", tokenResponse.get("id_token").toString());
-            store.saveItem(response, "access_token", tokenResponse.getAccessToken());
-            store.saveItem(response, "refresh_token", tokenResponse.getRefreshToken());
-            store.saveItem(response, "expires_in_seconds", tokenResponse.getExpiresInSeconds().toString());
-            store.saveItem(response, "xero_tenant_id", connection.get(0).getTenantId().toString());
 
-            response.sendRedirect("./AuthenticatedResource");
+            try {
+                DecodedJWT verifiedJWT = defaultClient.verify(tokenResponse.getAccessToken());
+                        
+                ApiClient defaultIdentityClient = new ApiClient("https://api.xero.com", null, null, null, null);
+                IdentityApi idApi = new IdentityApi(defaultIdentityClient);
+                List<Connection> connection = idApi.getConnections(tokenResponse.getAccessToken(),null);
+                           
+                store.saveItem(response, "token_set", tokenResponse.toPrettyString());
+                store.saveItem(response, "access_token", verifiedJWT.getToken());
+                store.saveItem(response, "refresh_token", tokenResponse.getRefreshToken());
+                store.saveItem(response, "expires_in_seconds", tokenResponse.getExpiresInSeconds().toString());
+                store.saveItem(response, "xero_tenant_id", connection.get(0).getTenantId().toString());
+
+                response.sendRedirect("./AuthenticatedResource");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         } else {
             System.out.println("Invalid state - possible CSFR");
         }

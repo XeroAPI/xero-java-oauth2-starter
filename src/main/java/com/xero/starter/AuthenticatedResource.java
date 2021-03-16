@@ -41,6 +41,7 @@ public class AuthenticatedResource extends HttpServlet {
 		// Let's decode our id_token and print out some values
 		try {
 			DecodedJWT jwt_decoded = JWT.decode(id_token);
+			
 			Map<String, Claim> claims = jwt_decoded.getClaims();  
 			System.out.println(claims.get("email").asString());
 			System.out.println(claims.get("given_name").asString());

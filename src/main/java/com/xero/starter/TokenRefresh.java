@@ -17,6 +17,8 @@ import com.google.api.client.http.BasicAuthentication;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.xero.api.ApiClient;
 
 public class TokenRefresh {
     final static Logger logger = LoggerFactory.getLogger(TokenRefresh.class);
@@ -24,6 +26,7 @@ public class TokenRefresh {
     final String clientId = "--CLIENT-ID--";
     final String clientSecret = "--CLIENT-SECRET--";
     final String TOKEN_SERVER_URL = "https://identity.xero.com/connect/token";
+    final ApiClient defaultClient = new ApiClient();
 
     public TokenRefresh() {
         super();
@@ -54,14 +57,20 @@ public class TokenRefresh {
                         logger.debug("------------------ Refresh Token : SUCCESS -------------------");
                     }
 
-                    // DEMO PURPOSE ONLY - You'll need to implement your own token storage solution
-                    TokenStorage store = new TokenStorage();
-                    store.saveItem(response, "jwt_token", tokenResponse.toPrettyString());
-                    store.saveItem(response, "access_token", tokenResponse.getAccessToken());
-                    store.saveItem(response, "refresh_token", tokenResponse.getRefreshToken());
-                    store.saveItem(response, "expires_in_seconds", tokenResponse.getExpiresInSeconds().toString());
+                    try {
+                        DecodedJWT verifiedJWT = defaultClient.verify(tokenResponse.getAccessToken());
+                        
+                        // DEMO PURPOSE ONLY - You'll need to implement your own token storage solution
+                        TokenStorage store = new TokenStorage();
+                        store.saveItem(response, "token_set", tokenResponse.toPrettyString());
+                        store.saveItem(response, "access_token", verifiedJWT.getToken());
+                        store.saveItem(response, "refresh_token", tokenResponse.getRefreshToken());
+                        store.saveItem(response, "expires_in_seconds", tokenResponse.getExpiresInSeconds().toString());
 
-                    currToken = tokenResponse.getAccessToken();
+                        currToken = verifiedJWT.getToken();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }           
                 } catch (TokenResponseException e) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("------------------ Refresh Token : EXCEPTION -------------------");
